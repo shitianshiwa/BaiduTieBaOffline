@@ -61,7 +61,7 @@ python版本：Python 3.5.1/3.6.8
 
 要爬取单个贴子的话，修改get_single_thread.py里的get_single_thread('贴子id（数字，贴子链接后面的数字）','','','1')即可（支持多行）
 
-要爬取整个贴吧的话，修改get_forum_all.py里的my_url = "https://tieba.baidu.com/f?ie=utf-8&kw=xxxxxxxxxxxx"即可（支持多行）
+要爬取整个贴吧的话，修改get_forum_all.py里的my_url = "https://tieba.baidu.com/f?ie=utf-8&kw=xxxxxxxxxxxx" 即可（支持多行）
 
 2020-2-25
 
