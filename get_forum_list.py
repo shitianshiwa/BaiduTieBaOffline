@@ -1,38 +1,25 @@
-import os
-import shutil
-import json
-import hashlib
+from selenium import webdriver
 import signal
-from datetime import datetime
 from urllib import request as r
 from urllib.parse import urlparse
 from urllib.parse import unquote
+import os
+import shutil
 from bs4 import BeautifulSoup
-
-
-from selenium import webdriver
-#from selenium.webdriver.chrome.options import Options
-
-#path =r'D:\python3.6.8\Scripts\chromedriver.exe'
-#chrome_options = Options()
+import json
+import hashlib
 
 browser = None
 
 
 # 1.准备根目录
 def prepare_home_base_dir(home_base_dir):
-    #print(home_base_dir+'model/res')
-    #print(home_base_dir + 'res')
     try:
         os.makedirs(home_base_dir)
-    except Exception as err:#FileExistsError or OSError:
-        print(err)
-        print(datetime.now())
+    except FileExistsError or OSError:
+        print('!!!--error--!!! FileExists or OSError return')
         return
-        #print('!!!--error--!!! FileExists or OSError return')
-        
-    shutil.copytree('./model/res',home_base_dir+'res')
-    
+    shutil.copytree('model/res', home_base_dir + '/res')
 
 
 # 获取单个页面
@@ -62,7 +49,7 @@ def get_forum_basic_info(base_url):
     html_tree = get_single_list_page(base_url)
     # with open('model/model_list.html', 'r', encoding='utf-8') as f:
     #     html_tree = BeautifulSoup(f, 'lxml')
-        
+
     res = {}
 
     # 标题
@@ -86,10 +73,7 @@ def get_forum_basic_info(base_url):
     # print(res['card_infoNum'])
 
     # 贴吧口号(目录不要了)
-    if html_tree.find('p', class_='card_slogan')!=None:
-        res['card_slogan'] = html_tree.find('p', class_='card_slogan').string
-    else:
-        res['card_slogan'] =''
+    res['card_slogan'] = html_tree.find('p', class_='card_slogan').string
     # print(res['card_slogan'])
 
     thread_list_bottom = html_tree.body.find('div', class_='thread_list_bottom')
@@ -138,7 +122,7 @@ def get_forum_basic_info(base_url):
 
 
 def inflate_detail_model_with_list_data(base_info):
-    with open('./model/model_list.html', 'r', encoding='utf-8') as f:
+    with open('model/model_list.html', 'r', encoding='utf8') as f:
         # parser = etree.HTMLParser()
         html_tree = BeautifulSoup(f, 'lxml')
 
@@ -180,9 +164,8 @@ def get_forum_list(base_url):
         print('!!!--error--!!! fatal error, can not find forum name!')
         return
     else:
-        base_dir = './'+unquote(unquote(quote_base_dir))
+        base_dir = unquote(unquote(quote_base_dir))
         base_dir += '/'
-        #print(base_dir)
 
     # 1.准备根目录
     print('1.prepare forum folder')
@@ -217,13 +200,6 @@ def get_forum_list(base_url):
             thread_list.clear()
             thread_list_bottom = model.find('div', class_='thread_list_bottom')
             thread_list_bottom.clear()
-            headpic = model.find('div', class_='card_head')#找到包住吧头像的标签
-            headpic2= model.find('img', class_='card_head_img')#先存着吧头像标签
-            headpic.clear()#清空包住吧头像的标签
-            temp=BeautifulSoup("<a href='"+"http://tieba.baidu.com/f?kw=" + quote_base_dir + "&ie=utf-8"+"'>"+str(headpic2)+"</a>",'lxml')#为吧头像表情增加超链接
-            headpic.append(temp)#重新添加回去
-            baming = model.find('a', class_='card_title_fname')
-            baming['href']="http://tieba.baidu.com/f?kw=" + quote_base_dir + "&ie=utf-8"#点贴吧名字跳转到活的贴吧链接
 
             print('getting page detail ' + str(page))
 
@@ -234,10 +210,6 @@ def get_forum_list(base_url):
             # 帖子列表
             tid_list = []
             thread_list_data = content.find('ul', id='thread_list')
-
-            #username2=content.find('div',class_='threadlist_author')
-            #print(username2)
-            #username2.clear()
 
             for thread_list_node in thread_list_data:
                 try:
@@ -258,12 +230,7 @@ def get_forum_list(base_url):
                         else:
                             print('something wrong maybe')
 
-                        username2=thread_list_node.find_all('div', class_='threadlist_author')#去掉星座图片
-                        for temp in username2:
-                            if temp:
-                                temp.find('span', class_='icon_wrap').clear()
-
-                        thread_list.append(thread_list_node)#主题贴列表相关，注释掉后就仅剩帖子了
+                        thread_list.append(thread_list_node)
 
                     elif "j_thread_list" in thread_list_node['class']:
                         # 普通帖子
@@ -281,29 +248,11 @@ def get_forum_list(base_url):
                             j_th_tit['href'] = str(page) + '_thread/' + tid_str + '/1.html'
                         else:
                             print('something wrong on a_target maybe')
-                            
-                        username2=thread_list_node.find('div', class_='threadlist_author').find_all('span', class_='icon_wrap')#去掉星座图片
-                        for temp in username2:
-                            if temp:
-                                temp.clear()
-                                
-                        thread_list.append(thread_list_node)#主题贴列表相关，注释掉后就仅剩置顶帖了
+                        thread_list.append(thread_list_node)
 
                     else:
                         # 广告!!!
                         print('enconter an ad ' + str(page))
-
-                    username=thread_list_node.find('span', class_='tb_icon_author').find_all('img', class_='nicknameEmoji')#主题贴楼主昵称图片
-                    for temp in username:
-                        if username:
-                            emoji=temp['src'].split("/")
-                            temp['src'] ="res/nickemoji/"+emoji[len(emoji)-1]
-                        
-                    username=thread_list_node.find('span', class_='tb_icon_author_rely').find_all('img', class_='nicknameEmoji')#最后回贴人的昵称图片
-                    for temp in username:
-                        if username:
-                            emoji=temp['src'].split("/")
-                            temp['src'] ="res/nickemoji/"+emoji[len(emoji)-1]
 
                 except BaseException:
                     # 解析帖子列表的时候会混进很多奇怪的东西,不管
@@ -316,7 +265,7 @@ def get_forum_list(base_url):
             os.makedirs(base_dir + str(page) + '_thread')
             with open(base_dir + str(page) + '_thread/' + 'tid_info.json', 'w', encoding='utf-8') as tid_info_file:
                 tid_info_file.write(json.dumps(thread_id_data))
-            
+
             # 底部页码
             thread_list_bottom_data = content.find('div', class_='thread_list_bottom')
             for pagination_item in thread_list_bottom_data.find_all('a', class_='pagination-item'):
@@ -342,7 +291,7 @@ def get_forum_list(base_url):
 
             # 处理资源,这里再弄一份是因为model突然搜不到带src的标签,我也不知道为什么,重新构造一份才行
             write_model = BeautifulSoup(str(model), 'lxml')
- 
+
             src_nodes = write_model.select('img')
             print('dealing with src ' + str(page))
             count = 1
@@ -369,16 +318,24 @@ def get_forum_list(base_url):
                 except BaseException:
                     print('!!!--error--!!! invalid img tag!')
             download_list.clear()
-                
+
             # 完成,输出
-            with open(base_dir + str(page) + '.html', 'w', encoding='utf-8') as f:
+            with open(base_dir + str(page) + '.html', 'w', encoding='utf8') as f:
                 f.write(str(write_model))
             print('done with page ' + str(page))
 
 
 if __name__ == '__main__':
-    #browser = webdriver.Chrome()
     browser = webdriver.PhantomJS()
-    get_forum_list("https://tieba.baidu.com/f?ie=utf-8&kw=%E8%B4%B4%E5%90%A7")#贴吧
+    get_forum_list("http://tieba.baidu.com/f?ie=utf-8&kw=%E6%9D%B0%E9%92%A2%E9%98%9F%E9%95%BF")
     browser.service.process.send_signal(signal.SIGTERM)
     browser.quit()
+
+# browser = webdriver.PhantomJS()
+# str2 = 'http://tieba.baidu.com/f?kw=%E6%97%A5%E8%AF%AD&ie=utf-8&pn=50&pagelets=frs-list%2Fpagelet%2Fthread&pagelets_stamp=1472009237919'
+# browser.get('http://tieba.baidu.com/f?kw=iur_li&ie=utf-8&pn=0')
+# # browser.get(str2)
+# # browser.find_element_by_class_name()
+# html_source = browser.page_source
+# html_tree = BeautifulSoup(str(html_source), 'lxml')
+# print(html_tree.prettify())

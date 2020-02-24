@@ -33,36 +33,12 @@ python贴吧爬虫玩具，把整个贴吧html（除了我认为不需要的，�
 
 这个玩具爬比较简单的小贴吧应该是没有多大问题（比如说我自己的那个），其他可能会出问题，特别是里面抓取数据代码写的不够灵活，很多地方可以用多线程去做也没做，没优化，因为对我而言也够用了，之后百度api改了那也没办法，总之我已经玩够了2333，不过要真有人用这个遇到问题随时欢迎讨论 --2016.8.25
 
+使用的第三方库或软件：
+selenium
+PhantomJS
+BeautifulSoup
+
+python版本：Python 3.5.1
+
 special thanks:
 曾经一起度过美好时光的贴吧吧友们～
-
----
-图片内容可使用tiebapic.baidu.com/forum/pic/item/或者imgsrc.baidu.com/forum/pic/item/+图片名字 去查询
-
-使用的第三方库或软件：
-
-python3 -m pip install selenium==2.53.6（这个版本很低，如果以后换浏览器记得升级下）
-
-PhantomJS（https://github.com/ariya/phantomjs） ，下载后放在python根目录的Scripts文件夹里。这是一个不显示内容的浏览器
-
-python3 -m pip install beautifulsoup4
-
-python3 -m pip install lxml
-
-python3 -m pip install --upgrade pip
-
-//pip3 install --upgrade pip
-
-python版本：Python 3.5.1/3.6.8
-
-单个贴子删除base_info.json文件可以继续更新（注意备份，防止因为原贴已被删除导致丢失了 ）
-
-获取楼层失败可以通过删除失败的楼层文件夹来解决
-
-要爬取单个贴子的话，修改get_single_thread.py里的get_single_thread('贴子id（数字，贴子链接后面的数字）','','','1')即可（支持多行）
-
-要爬取整个贴吧的话，修改get_forum_all.py里的my_url = "https://tieba.baidu.com/f?ie=utf-8&kw=xxxxxxxxxxxx"即可（支持多行）
-
-2020-2-25
-
-
