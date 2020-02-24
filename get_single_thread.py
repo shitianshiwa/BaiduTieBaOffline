@@ -1,18 +1,20 @@
-from urllib import request as r
 import zlib
 import time
 import os
-import shutil
-from bs4 import BeautifulSoup
+import shutil#文件操作
 import json
 import hashlib
 
+from urllib import request as r
+from bs4 import BeautifulSoup
 
+pic_name={}
+
+#浏览器的开发者工具network可以找到header
 def req_maker(path):
     if path:
         req = r.Request(path)
-        req.add_header("User-Agent",
-                       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36")
+        req.add_header("User-Agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36")
         req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
         req.add_header("Accept-Encoding", "gzip, deflate, sdch")
         req.add_header("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
@@ -24,9 +26,9 @@ def req_maker(path):
 
 def get_response_str(req):
     with r.urlopen(req) as f:
-        decompressed_data = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
-        return str(decompressed_data, "utf-8", errors='replace')
-
+        decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
+    return str(decompressed_data, "utf-8", errors='replace')
+        
 
 def get_now_str():
     return int(float(time.time()) * 1000)
@@ -41,12 +43,13 @@ def prepare_folder(tid):
     except FileExistsError or OSError:
         print('!!!--error--!!! FileExists or OSError return')
         return
-    shutil.copytree('model/res', tid + '/res')
+    #shutil.copytree('model/res', tid + '/res')
+    shutil.copytree('./model/res','./'+tid+'/res')
 
 
 # 把数据填充进去,造一个模版出来
 def inflate_detail_model_with_data(base_info):
-    with open('model/model_detail.html', 'r', encoding='utf8') as f:
+    with open('./model/model_detail.html', 'r', encoding='utf-8') as f:
         # parser = etree.HTMLParser()
         html_tree = BeautifulSoup(f, 'lxml')
         # return etree.parse(f.read(), parser=parser)
@@ -85,7 +88,7 @@ def inflate_detail_model_with_data(base_info):
 
 
 def get_thread_basic_info_html(_tid):
-    html_str = get_response_str(req_maker('http://tieba.baidu.com/p/' + _tid))
+    html_str = get_response_str(req_maker('https://tieba.baidu.com/p/' + _tid))
     return BeautifulSoup(html_str, 'lxml')
 
 
@@ -101,39 +104,52 @@ def get_and_save_src(path, save_path):
 def get_thread_basic_info(t_tid, t_fid):
     res = {}
     res['tid'] = t_tid
-    res['fid'] = t_fid
-
+    res['fid'] = t_fid#ok
+    
     html_tree = get_thread_basic_info_html(t_tid)
 
     # meta furl 我也不知道这个是拿来干嘛
     meta = html_tree.head.select('meta[furl]')
     res['meta_furl'] = meta[0].furl
     res['meta_fname'] = meta[0].fname
-
+    
     # 标题
     res['title'] = html_tree.head.title.string.strip()
-    # print(res['title'])
+    #print(res['title'])
 
-    # 贴吧头像部分
-    res['card_head_img'] = html_tree.body.find('img', class_='card_head_img')['src']
-    # print(res['card_head_img'])
+    # 贴吧头像部分 plat_card_top
+    if html_tree.body.find('img', class_='card_head_img')==None:#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+        temp = html_tree.body.find('a', class_='plat_picbox')
+        res['card_head_img']=temp.find('img')['src']
+    else:
+        res['card_head_img'] = html_tree.body.find('img', class_='card_head_img')['src']
+    #print(res['card_head_img'])
 
     # 下载贴吧头像文件
     # res['card_head_img_path'] = res['tid'] + '/' + urlparse(res['card_head_img']).path.split('/')[-1]
     # with open(res['card_head_img_path, 'wb') as img_src:
     #     img_src.write(get_src(res['card_head_img))
 
-    card_title = html_tree.body.find('div', class_='card_title')
-
-    # 贴吧名称
-    res['card_title_fname'] = card_title.find('a', class_='card_title_fname').string.strip()
-    # print(res['card_title_fname'])
-
-    # 关注和帖子数
-    res['card_menNum'] = card_title.find('span', class_='card_menNum').string.strip()
-    # print(res['card_menNum'])
-    res['card_infoNum'] = card_title.find('span', class_='card_infoNum').string.strip()
-    # print(res['card_infoNum'])
+    if html_tree.body.find('div', class_='card_title')==None:#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+        card_title =html_tree.body.find('div', class_='plat_use_total')
+        # 贴吧名称
+        res['card_title_fname'] = html_tree.body.find('a', class_='plat_title_h3').string.strip()
+        #print(html_tree.body.find('a', class_='plat_title_h3'))
+        # 关注和帖子数
+        res['card_menNum'] = card_title.find_all('span',class_='plat_post_num')[0].string.strip()
+        #print(card_title.find_all('span',class_='plat_post_num')[1].string)
+        res['card_infoNum'] = card_title.find_all('span',class_='plat_post_num')[1].string.strip()
+        # print(res['card_infoNum'])
+    else:
+        card_title =html_tree.body.find('div', class_='card_title')
+        # 贴吧名称
+        res['card_title_fname'] = card_title.find('a', class_='card_title_fname').string.strip()#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+        #print(str(res))
+        # 关注和帖子数
+        res['card_menNum'] = card_title.find('span', class_='card_menNum').string.strip()#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+        # print(res['card_menNum'])
+        res['card_infoNum'] = card_title.find('span', class_='card_infoNum').string.strip()#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+        # print(res['card_infoNum'])
 
     # 帖子页数,这个比较关键
     l_reply_num_nods = html_tree.find_all('li', class_='l_reply_num')
@@ -142,8 +158,7 @@ def get_thread_basic_info(t_tid, t_fid):
             spans = node.find_all('span', class_='red')
             if len(spans) == 2:
                 res['total_page'] = int(spans[1].string.strip())
-    # print(res['total_page'])
-
+    #print(res['total_page'])
     return res
 
 
@@ -191,7 +206,7 @@ def make_reply_block():
     return BeautifulSoup(block_str, 'lxml')
 
 
-# http://tieba.baidu.com/p/comment?tid=3042881140&pid=50510635824&pn=2,这个一次给10条,不过这里会循环一直到取不到为止
+# http://tieba.baidu.com/p/comment?tid=xxxxx&pid=xxxxxxxxx&pn=2,这个一次给10条,不过这里会循环一直到取不到为止
 # pid为楼层id
 
 def get_comment_by_floor(tid, pid):
@@ -221,14 +236,15 @@ def get_comment_by_floor(tid, pid):
 
 
 # 获取单个帖子,按页保存,能够哪个页面坏了删掉那一页重新跑就行
-def get_single_thread(tid, fid, title_check):
+def get_single_thread(tid, fid, title_check,page2):
+
     if tid is None or fid is None:
         print('!!!--error--!!! lacking basic info, can not continue!')
         return
 
     thread_tid = tid
     thread_fid = fid
-    base_dir = thread_tid + '/'
+    base_dir = './'+thread_tid + '/'
 
     # 1.准备好目录
     print('1.prepare thread folder')
@@ -247,13 +263,17 @@ def get_single_thread(tid, fid, title_check):
         with open(base_dir + 'base_info.json', 'w', encoding='utf-8') as base_info_file:
             base_info_file.write(json.dumps(info))
 
+    # print(str(info['title']))
+    # print('66666666666666666666666666666666666666666')
+    '''
+    #发现这个有问题，tieba的api改版了，这个会删掉有用的
     if title_check:
-        # 贴吧里面会混入别的贴吧的信息,通过校验title干掉大部分这些恶心的东西
+        #贴吧里面会混入别的贴吧的信息,通过校验title干掉大部分这些恶心的东西
         if info['title'].find(title_check) == -1:
             print("fake thread found!!!")
-            shutil.rmtree(thread_tid)
+            shutil.rmtree(thread_tid)#Python os.removedirs() 和shutil.rmtree() 用于删除文件夹
             return True
-
+    '''
     # 构造模版,并填充基本数据
     print('3.inflate model with info')
     model = inflate_detail_model_with_data(info)
@@ -272,35 +292,73 @@ def get_single_thread(tid, fid, title_check):
             thread_theme_5.clear()
             thread_theme_7 = model.find('div', id='thread_theme_7')
             thread_theme_7.clear()
-
+            headpic = model.find('div', class_='card_head')#找到包住吧头像的标签
+            headpic2= model.find('img', class_='card_head_img')#先存着吧头像标签
+            headpic.clear()#清空包住吧头像的标签
+            temp=BeautifulSoup("<a href='"+"../../"+str(page2)+".html'>"+str(headpic2)+"</a>",'lxml')#为吧头像表情增加超链接
+            headpic.append(temp)#重新添加回去
+            baming = model.find('a', class_='card_title_fname')
+            baming['href']='../../'+str(page2)+'.html'#点贴吧名字跳转到主题贴列表
+            #tupiantie = get_thread_basic_info_html(thread_tid)#图片贴
+            #tupiantie2=tupiantie.find('div', id='ag_container')#图片贴
+            #thread_theme_5.append(tupiantie2)
             print('getting page detail ' + str(page))
             # 获取实际内容和评论列表
             content, comment_data = get_thread_by_page(info, page)
-
+            
             # 列表的实际内容
             post_lists = content['content'].find_all('div', class_='l_post')
             for post in post_lists:
                 # 取出post数据
                 post_data_node = post.find('div', class_="j_d_post_content")
+                
+                post_data_node2 = post.find('span', class_="j_jb_ele") #解决举报按钮图片
+                if post_data_node2:
+                   post_data_node2.clear()
+                
+                post_data_node3 = post.find('span', class_="icon_wrap icon_wrap_theme1 d_pb_icons")#解决星座图片
+                if post_data_node3:
+                   post_data_node3.clear()
+
+                post_data_node3 = post.find('div', class_="icon_relative").find("a")#解决头像框
+                if post_data_node3:
+                   post_data_node3['style']=None
+                   
+                post_data_node4 = post.find('div', class_="post_bubble_top")#
+                if post_data_node4:
+                   post_data_node4['style'] = None
+                post_data_node5 = post.find('div', class_="post_bubble_middle")#
+                if post_data_node5:
+                   post_data_node5['style'] = None
+                post_data_node6 = post.find('div', class_="post_bubble_bottom")#
+                if post_data_node6:
+                   post_data_node6['style'] = None
+
+                post_data_node7 = post.find_all('img', class_="nicknameEmoji")#昵称,用find_all解决找到前面不找后面
+                for temp in post_data_node7:
+                    if temp:
+                       emoji=temp['src'].split("/")
+                       temp['src'] ="res/nickemoji/"+emoji[len(emoji)-1]
+
+                   
 
                 if post_data_node:
                     post_data_id = post_data_node['id'].split('_')[-1]
                     post_data_node_comment = post.find('div', class_="j_lzl_container")
-                    post_data_node_comment['data-field'] = None
-                    post_data_node_comment['style'] = None
-                    post_data_node_comment.clear()
-
+                    if post_data_node_comment!=None:#有些旧版贴吧贴子有兼容问题，比如贴吧意见反馈吧的贴子
+                        post_data_node_comment['data-field'] = None
+                        post_data_node_comment['style'] = None
+                        post_data_node_comment.clear()
+                
                     # 送他礼物
                     share_btn_wrapper = post.find('div', class_="share_btn_wrapper")
                     if share_btn_wrapper:
                         share_btn_wrapper.clear()
-
                     if comment_data.get(post_data_id):
                         # 有评论
                         block_tree = get_comment_by_floor(thread_tid, post_data_id)
                         post_data_node_comment.append(block_tree)
-
-                    p_postlist.append(post)
+                    p_postlist.append(post)   
                     print('adding a floor ' + str(page))
                 else:
                     # 广告!!!
@@ -324,6 +382,8 @@ def get_single_thread(tid, fid, title_check):
                     try:
                         num = int(a_node.string)
                         a_node['href'] = str(num) + '.html'
+                        #a_node['href'] ='1.html'
+                        print(str(a_node))
                     except TypeError:
                         print('!!!--error--!!! TypeError:' + a_node.prettify())
                     except ValueError:
@@ -359,7 +419,7 @@ def get_single_thread(tid, fid, title_check):
             AD2 = model.find('div', class_='thread_recommend')
             if AD2:
                 AD2.clear()
-
+                
             print('clear staff under name ' + str(page))
             # 一个奇怪的样式,会挂在名字底下
             d_pb_icons = model.find('span', class_='d_pb_icons')
@@ -368,7 +428,6 @@ def get_single_thread(tid, fid, title_check):
 
             # 处理资源,这里再弄一份是因为model突然搜不到带src的标签,我也不知道为什么,重新构造一份才行
             write_model = BeautifulSoup(str(model), 'lxml')
-
             src_nodes = write_model.select('img[src]')
             print('dealing with src ' + str(page))
             count = 1
@@ -383,88 +442,57 @@ def get_single_thread(tid, fid, title_check):
                     if download_list.get(src_str):
                         src_node['src'] = download_list.get(src_str)
                     else:
-                        md5 = hashlib.md5()
+                        #print(src_str+",66666666666")
+                        #name=src_str.encode('utf-8')
+                        #names1=str(name).split("/item/")#贴吧用户头像
+                        #names2=str(name).split("%2Fitem%2F")#贴吧头像
+                        #if(len(names1)>1):
+                            #names3=names1[1].split("?t=")
+                            #link_path = str(page) + '/' + names3[0] + '.jpg'
+                            #print('666'+str(names3[0]))
+                        #elif(len(names2)>1):
+                            #names4=names2[1].split(".jpg'")
+                            #link_path = str(page) + '/' + names4[0]+ '.jpg'
+                            #print('777'+str(names4[0]))
+                        md5 = hashlib.md5()#下载图片 https://blog.csdn.net/qq_38607035/article/details/82591931
                         md5.update(src_str.encode('utf-8'))
-                        link_path = str(page) + '/' + md5.hexdigest() + '.png'
+                        link_path = str(page) + '/' + md5.hexdigest() + '.jpg'
+                        #//imgsa.baidu.com
+                        #https://imgsrc.baidu.com/forum/pic/item/
+                        if(src_str.find("//tiebapic.baidu.com/forum/")!=-1):#贴子里面的图片
+                            sss2=src_str.split("/")
+                            src_str="https://tiebapic.baidu.com/forum/pic/item/"+sss2[len(sss2)-1].split(".")[0]+".jpg"#解决签名档偶尔下载不到图片的问题
+                            print(src_str)
+                            link_path = str(page) + '/' + sss2[len(sss2)-1].split(".")[0]+".jpg"
+                        elif(src_str.find("//imgsa.baidu.com/forum/")!=-1):
+                            sss2=src_str.split("/")
+                            src_str="https://imgsrc.baidu.com/forum/pic/item/"+sss2[len(sss2)-1].split(".")[0]+".jpg"#解决签名档偶尔下载不到图片的问题
+                            print(src_str)
+                            link_path = str(page) + '/' + sss2[len(sss2)-1].split(".")[0]+".jpg"
                         src_node['src'] = link_path
                         get_and_save_src(src_str, base_dir + link_path)
+                        print(str(src_str)+str(base_dir)+str(link_path))
                         print('downloading no.' + str(count) + ' img ' + str(page))
                         count += 1
                         download_list[src_str] = link_path
             download_list.clear()
-
             # 完成,输出
-            with open(base_dir + str(page) + '.html', 'w', encoding='utf8') as f:
+            with open(base_dir + str(page) + '.html', 'w', encoding='utf-8') as f:
                 f.write(str(write_model))
             print('done with page ' + str(page))
+            time.sleep(10)#爬完一页后等待10秒再继续
 
 
 # 有些地方需要登陆,所以cookie自己想办法弄吧
-cookie = None
 
 if __name__ == '__main__':
+    cookie = ""#不能设为None,会报错
+    get_single_thread('6160227969','4536','','1')#2017年以前的贴子正在陆续开放显示之前为暂时隐藏(贴吧吧) 贴子id(https://tieba.baidu.com/p/XXXXXXXX)，贴吧id(用开发者工具翻贴吧主题贴列表首页<head>里面的<script>标签,找‘// 吧的基本信息 PageData.forum’)，贴子名字(不用填)，返回指定页主题贴列表的页数。点击贴吧名返回指定页主题贴列表用（只爬一个贴子时可以不管）
     pass
-    # get_single_thread(None, None)
-    # with open('3042881140/1.html', 'r', encoding='utf8') as f:
-    #     html_tree = BeautifulSoup(f, 'lxml')
-    #
-    # src = html_tree.select('img[src]')
-    # print(len(src))
-
-
-    # a = ThreadInfo("4369024003", "3092694")
-
-    # a = ThreadInfo("3042881140", "738100")
-    # content, comment_data = get_thread_by_page(a, 2)
-
-    # print(get_comment_by_floor('3042881140', '50510635824'))
-
-    # str2 = '{&quot;author&quot;:{&quot;user_id&quot;:323902072,&quot;user_name&quot;:&quot;iur_li&quot;,&quot;props&quot;:null},&quot;content&quot;:{&quot;post_id&quot;:73907222771,&quot;is_anonym&quot;:false,&quot;forum_id&quot;:3092694,&quot;thread_id&quot;:3977770292,&quot;content&quot;:&quot;\u60f3\u4e86\u597d\u4e45\u60e9\u7f5a\u65b9\u5f0f\uff0c\u8fd9\u662f\u4e2a\u5934\u75bc\u7684\u95ee\u9898\uff0c\u672c\u738b\u5bf9\u7269\u8d28\u751f\u6d3b\u8981\u6c42\u8fc7\u4f4e\u4ee5\u81f3\u4e8e\u6ca1\u6709\u4ec0\u4e48\u770b\u8d77\u6765\u80fd\u591f\u8ba9\u6211\u89c9\u5f97\u5fc3\u75bc\u7684\u3002&lt;br&gt;\u60f3\u4e86\u534a\u5929\u7ec8\u4e8e\u60f3\u5230\u4e86\uff0c\u8fdd\u80cc\u672c\u738b\u4ef7\u503c\u89c2\u7684\u76f8\u5f53\u5192\u9669\u7684\u884c\u4e3a\uff0c\u8fd9\u6837\u624d\u523a\u6fc0\u561b\u3002&lt;img class=\&quot;BDE_Smiley\&quot; pic_type=\&quot;1\&quot; width=\&quot;30\&quot; height=\&quot;30\&quot; src=\&quot;http:\/\/tb2.bdstatic.com\/tb\/editor\/images\/face\/i_f25.png?t=20140803\&quot; &gt;&lt;br&gt;\u9664\u7279\u6b8a\u60c5\u51b5\u5916\uff0c\u6ca1\u6709\u4e56\u4e56\u65e9\u8d77\u65e9\u7761\u7684\uff0c\u4e00\u6b21\u7f5a200\uff0c\u6bcf\u5468\u7ed3\u7b97\uff0c\u94b1\u62ff\u53bb\u7092\u80a1&lt;img class=\&quot;BDE_Smiley\&quot; pic_type=\&quot;1\&quot; width=\&quot;30\&quot; height=\&quot;30\&quot; src=\&quot;http:\/\/tb2.bdstatic.com\/tb\/editor\/images\/face\/i_f23.png?t=20140803\&quot; &gt;&lt;br&gt;\u672c\u5468\u7b97\u8bd5\u884c\u5468\uff0c\u7f5a50\uff0c\u4e0b\u5468\u5f00\u59cb200&lt;img class=\&quot;BDE_Smiley\&quot; pic_type=\&quot;1\&quot; width=\&quot;30\&quot; height=\&quot;30\&quot; src=\&quot;http:\/\/tb2.bdstatic.com\/tb\/editor\/images\/face\/i_f25.png?t=20140803\&quot; &gt;&quot;,&quot;post_no&quot;:3,&quot;type&quot;:&quot;0&quot;,&quot;comment_num&quot;:0,&quot;props&quot;:null,&quot;post_index&quot;:2,&quot;pb_tpoint&quot;:null}}'
-    # print(str2.replace('&quot;', '\"'))
-
-    # ThreadInfo(tid).prepare()
-    # a = ThreadInfo(tid)
-    # a.prepare()
-    # print(a)
-    # get_thread_basic_info()
-
-    # str = "http://m.tiebaimg.com/timg?wapp&quality=80&size=b150_150&subsize=20480&cut_x=0&cut_w=0&cut_y=0&cut_h=0&sec=1369815402&srctrace&di=b0040d56c398395101a15fb250730dd2&wh_rate=null&src=http%3A%2F%2Ftb1.bdstatic.com%2Ftb%2Fcms%2Ffrs%2Fbg%2Fdefault_avatar20141017.jpg"
-    #
-    # res = urlparse(str)
-    # print(res.path.split('/')[-1])
-
-
-    # get_thread_basic_info()
-    # html_tree = inflate_detail_model()
-    # info = ThreadInfo(tid)
-
-
-
-    # root.head.title['src'] = 'KKK'
-    # print(root.find_all(None, id = 'j_p_postlist'))
-    # root.head.title.clear()
-    # root.head.title.append('lalala')
-    # print(root.head.title)
-    # print(root.head)
-    #
-    # with open('model/test.html', 'w', encoding='utf8') as f:
-    #     f.write(str(root))
-
-    # print(HTML.tostring(root))
-
-    # print(.tostring())
-
-    # prepare_folder()
-
-
-    # now = float(time.time()) * 1000
-    # print(now)
-    # print(int(now))
-    #
-    # print(datetime.utcfromtimestamp(time.time()))
-    #
-    # print(time.time())
-    #
-    # # 1471502365200
-    # 1471503169169
-    # # 1471502542530 786
+'''
+http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
+get_single_thread('6351272485','898666','','1')
+楼层https://tieba.baidu.com/mo/q-----1-1-0----/flr?pid=XXXXX&kz=XXXXXXX&pn=0
+楼中楼https://tieba.baidu.com/p/comment?tid=xxxxxx&pid=xxxxxxxx&pn=0
+这是多行注释，用三个单引号
+'''

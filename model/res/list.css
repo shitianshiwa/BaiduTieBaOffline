@@ -427,6 +427,24 @@ a:visited {
     height: 17px;
     background-repeat: no-repeat;
 }
+.threadlist_title .icon-good {
+    background-position: -130px -137px;
+}
+.threadlist_title .icon-good {
+    display: inline-block;
+    width: 20px;
+    height: 17px;
+    background-repeat: no-repeat;
+}
+.threadlist_title .icon-member-top {
+    background-position: -1px -192px;
+}
+.threadlist_title .icon-member-top {
+    display: inline-block;
+    width: 55px;
+    height: 17px;
+    background-repeat: no-repeat;
+}
 .threadlist_title i {
     margin-right: 4px;
     vertical-align: middle;
