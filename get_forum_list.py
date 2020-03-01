@@ -3,14 +3,14 @@ import shutil
 import json
 import hashlib
 import signal
+
 from datetime import datetime
 from urllib import request as r
 from urllib.parse import urlparse
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
-
-
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 #from selenium.webdriver.chrome.options import Options
 
 #path =r'D:\python3.6.8\Scripts\chromedriver.exe'
@@ -18,6 +18,25 @@ from selenium import webdriver
 
 browser = None
 
+def getSource():
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Content-Encoding': 'gzip,deflate,br',
+        'Content-Type': 'text/html; charset=utf-8',
+        'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36',
+        'Cookie':''  
+    }
+    #使用copy()防止修改原代码定义dict
+    cap = DesiredCapabilities.PHANTOMJS.copy() 
+ 
+    for key, value in headers.items():
+        cap['phantomjs.page.customHeaders.{}'.format(key)] = value
+ 
+    # 不载入图片，爬页面速度会快很多
+    cap["phantomjs.page.settings.loadImages"] = False
+ 
+    driver = webdriver.PhantomJS(desired_capabilities=cap)#注意selenium的版本，高版本才支持chromedriver.exe.这里selenium==2.53.6
+    return driver
 
 # 1.准备根目录
 def prepare_home_base_dir(home_base_dir):
@@ -378,7 +397,7 @@ def get_forum_list(base_url):
 
 if __name__ == '__main__':
     #browser = webdriver.Chrome()
-    browser = webdriver.PhantomJS()
+    browser = getSource()#webdriver.PhantomJS()
     get_forum_list("https://tieba.baidu.com/f?ie=utf-8&kw=%E8%B4%B4%E5%90%A7")#贴吧
     browser.service.process.send_signal(signal.SIGTERM)
     browser.quit()

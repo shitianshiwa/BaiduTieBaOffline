@@ -4,9 +4,12 @@ import os
 import shutil#文件操作
 import json
 import hashlib
+import socket
+import urllib.error
 
 from urllib import request as r
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 pic_name={}
 
@@ -25,9 +28,25 @@ def req_maker(path):
 
 
 def get_response_str(req):
-    with r.urlopen(req) as f:
-        decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
-    return str(decompressed_data, "utf-8", errors='replace')
+    try:
+        with r.urlopen(req,timeout=5) as f:
+            decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
+        return str(decompressed_data, "utf-8", errors='replace')
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, socket.timeout):
+            print(str(datetime.now())+'TIME OUT')
+            exit()
+    #finally:
+        #print(datetime.now())
+    '''
+    try:
+	response = urllib.request.urlopen('http://httpbin.org/get',timeout=0.1)
+except urllib.error.URLError as e:
+	if isinstance(e.reason, socket.timeout):
+		print('TIME OUT')
+    '''
+    #版权声明：本文为CSDN博主「菜鸟也想要高飞」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+    #原文链接：https://blog.csdn.net/qq_36365528/article/details/96589973 
         
 
 def get_now_str():
