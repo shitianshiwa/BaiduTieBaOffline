@@ -14,7 +14,7 @@ pic_name={}
 def req_maker(path):
     if path:
         req = r.Request(path)
-        req.add_header("User-Agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36")
+        req.add_header("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.104 Safari/537.36")
         req.add_header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
         req.add_header("Accept-Encoding", "gzip, deflate, sdch")
         req.add_header("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
@@ -216,7 +216,8 @@ def get_comment_by_floor(tid, pid):
     while go_on:
         go_on = False
         html_str = get_response_str(
-            req_maker('http://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page)))
+            req_maker('http://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page)))#有&pn=是取不到内容的
+        #print('http://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page))
         html_tree = BeautifulSoup(html_str, 'lxml')
         page += 1
         li_nodes = html_tree.find_all('li')
@@ -227,6 +228,7 @@ def get_comment_by_floor(tid, pid):
                     go_on = True
                 if node['class'][count] == 'first_no_border':
                     node['class'][count] = ''
+        time.sleep(1)
 
     block_tree = make_reply_block()
     block_tree_node = block_tree.find('ul')
