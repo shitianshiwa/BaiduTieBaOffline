@@ -6,6 +6,7 @@ import json
 import hashlib
 import socket
 import urllib.error
+import re
 
 from urllib import request as r
 from bs4 import BeautifulSoup
@@ -503,12 +504,23 @@ def get_single_thread(tid, fid, title_check,page2):
             print('done with page ' + str(page))
             time.sleep(10)#爬完一页后等待10秒再继续
 
-
-# 有些地方需要登陆,所以cookie自己想办法弄吧
+def start(url):
+    tid=str(url).split("/p/")[1]
+    tid2=re.search(r'^[0-9]*$',tid).group(0)
+    #print(tid)
+    #print(tid2)
+    if(tid2!=None):
+        get_single_thread(tid2,'','','1')
+    else:
+        print('贴子链接无效！'+tid)
+    #Python3 正则表达式 | 菜鸟教程
+    #https://www.runoob.com/python3/python3-reg-expressions.html
+    #数字正则表达式 - miyaye - 博客园
+    #https://www.cnblogs.com/webskill/p/7422876.html
 
 if __name__ == '__main__':
-    cookie = ""#不能设为None,会报错
-    get_single_thread('6160227969','4536','','1')#2017年以前的贴子正在陆续开放显示之前为暂时隐藏(贴吧吧) 贴子id(https://tieba.baidu.com/p/XXXXXXXX)，贴吧id(用开发者工具翻贴吧主题贴列表首页<head>里面的<script>标签,找‘// 吧的基本信息 PageData.forum’)，贴子名字(不用填)，返回指定页主题贴列表的页数。点击贴吧名返回指定页主题贴列表用（只爬一个贴子时可以不管）
+    cookie = ""#不能设为None,会报错，有些地方需要登陆,所以cookie自己想办法弄吧
+    start("https://tieba.baidu.com/p/6160227969")#2017年以前的贴子正在陆续开放显示之前为暂时隐藏(贴吧吧) 贴子id(https://tieba.baidu.com/p/XXXXXXXX)，贴吧id(用开发者工具翻贴吧主题贴列表首页<head>里面的<script>标签,找‘// 吧的基本信息 PageData.forum’)，贴子名字(不用填)，返回指定页主题贴列表的页数。点击贴吧名返回指定页主题贴列表用（只爬一个贴子时可以不管）
     pass
 '''
 http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
