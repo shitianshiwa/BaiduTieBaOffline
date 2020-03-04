@@ -505,8 +505,8 @@ def get_single_thread(tid, fid, title_check,page2):
             time.sleep(10)#爬完一页后等待10秒再继续
 
 def start(url):
-    tid=str(url).split("/p/")[1]
-    tid2=re.search(r'^[0-9]*$',tid).group(0)
+    tid=str(url).split("/p/")[1].split("?pn=")[0]#https://tieba.baidu.com/p/XXXXXXXX?pn=XX
+    tid2=re.search(r'^[0-9]*$',tid).group(0)#正则表达式判断是不是全是数字
     #print(tid)
     #print(tid2)
     if(tid2!=None):
