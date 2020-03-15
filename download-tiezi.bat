@@ -1,0 +1,2 @@
+python get_single_thread.py
+pause
