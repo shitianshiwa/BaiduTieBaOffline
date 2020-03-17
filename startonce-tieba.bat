@@ -1,2 +1,2 @@
-python get_single_thread.py 0
+python get_forum_all.py
 pause
