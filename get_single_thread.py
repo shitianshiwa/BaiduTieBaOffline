@@ -283,12 +283,12 @@ def get_thread_basic_info_html(_tid):
         from bs4 import BeautifulSoup
         html="<html>
         <head>
-        <title class='ceshi'>TEST</title>
+        <title class='ceshi'>test</title>
         </head>
         <body>
-        2333
+        233
         <p class='sister'>
-        test
+        666
         </p>
         </body>
         </html>"
@@ -839,7 +839,7 @@ def usejson():
             start(x[0])
         else:
             print('链接:'+x[0]+","+str(x[2])+",该贴不更新！")
-        #time.sleep(random.choice(range(5, 10)))
+        time.sleep(random.choice(range(5, 10)))
     '''
     https://www.cnblogs.com/lpdeboke/p/11414254.html
     python中json的基本使用
@@ -856,23 +856,45 @@ def starttimer():
     # print("2233")
     usejson()
     timeoutx = 1800+random.choice(range(1, 10))
-    print("延迟："+str(timeoutx)+"s")
+    print("延迟："+str(timeoutx)+"s,下次运行时间："+str(time.strftime("%Y-%m-%d %H:%M:%S %a",time.localtime(time.time()+timeoutx))))#接收时间戳（1970纪元后经过的浮点秒数）并返回当地时间下的时间元组t（t.tm_isdst可取0或1，取决于当地当时是不是夏令时）。
     timer = threading.Timer(timeoutx, starttimer)
     timer.start()
+    '''
+    格式化日期
+    我们可以使用 time 模块的 strftime 方法来格式化日期，：
 
+    time.strftime(format[, t])
+    实例演示：
+
+    实例(Python 2.0+)
+    #!/usr/bin/python
+    # -*- coding: UTF-8 -*-
+    
+    import time
+    
+    # 格式化成2016-03-20 11:45:39形式
+    print time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) 
+    
+    # 格式化成Sat Mar 28 22:24:24 2016形式
+    print time.strftime("%a %b %d %H:%M:%S %Y", time.localtime()) 
+    
+    # 将格式字符串转换为时间戳
+    a = "Sat Mar 28 22:24:24 2016"
+    print time.mktime(time.strptime(a,"%a %b %d %H:%M:%S %Y"))
+    #Python 日期和时间 https://www.runoob.com/python/python-date-time.html
+    '''
 
 if __name__ == '__main__':
     # 不能设为None,会报错,有些地方需要登陆,所以cookie自己想办法弄吧(并不知道是那个cookie，也不知道怎么写，把自己的cookie弄上去也许号可能会没了)
     cookie = ""
     try:  # 不用bat启动会报错所以，设计成这样，报错后默认使用单次运行
         if sys.argv[1] == "1":
-            print("使用周期1800s运行！")
+            print("开始周期运行！")
             starttimer()  # 周期运行
         else:
             usejson()  # 单次运行
     except Exception as err:
         usejson()  # 单次运行
-
 '''
 http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
 get_single_thread('6351272485','898666','','1')
