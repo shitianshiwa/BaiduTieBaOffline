@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 timeout = 31
-socket.setdefaulttimeout(timeout)  # 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
+socket.setdefaulttimeout(timeout)# 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
 timer = None
 '''
 https://www.jianshu.com/p/d8585f0d9eb8
@@ -86,21 +86,31 @@ def get_response_str(req):
             decompressed_data = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
     except socket.timeout as e:
-        print('socket.timeout:', str(e))
-        logger.error('socket.timeout:'+str(e))
+        print("第一次，"+str(str(datetime.now()))+str(e))
+        logger.error("第一次，"+'socket.timeout:'+str(e))
         time.sleep(random.choice(range(8, 15)))
     except socket.error as e:
         print('socket.error:', str(e))
         logger.error('socket.error:'+str(e))
-        time.sleep(random.choice(range(20, 60)))
+        #time.sleep(random.choice(range(20, 60)))
+        #return False
     except http.client.BadStatusLine as e:
         print('http.client.BadStatusLine:', str(e))
         logger.error('http.client.BadStatusLine:'+str(e))
-        time.sleep(random.choice(range(30, 80)))
+        #time.sleep(random.choice(range(30, 80)))
+        #return False
     except http.client.IncompleteRead as e:
         print('http.client.IncompleteRead:', str(e))
         logger.error('http.client.IncompleteRead:'+str(e))
-        time.sleep(random.choice(range(5, 15)))
+        #time.sleep(random.choice(range(5, 15)))
+        #return False
+    try:
+        with r.urlopen(req,timeout=30) as f:
+            decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
+        return str(decompressed_data, "utf-8", errors='replace')
+    except socket.timeout as e:
+        print("第二次，"+str(str(datetime.now()))+str(e))
+        logger.error("第二次，"+str(str(datetime.now()))+str(e))
     return False
     '''
     except urllib.error.URLError as e:
@@ -113,7 +123,7 @@ def get_response_str(req):
         logger.error('UnicodeDecodeError url:',str(e))
     except socket.timeout as e:
         logger.error("socket timout:",str(e))
-        print("第一次，"+str(datetime.now())+'TIME OUT')
+        print("第一次，"+str(str(datetime.now()))+'TIME OUT')
         time.sleep(5)
         try:
             with r.urlopen(req,timeout=30) as f:
@@ -121,8 +131,8 @@ def get_response_str(req):
             return str(decompressed_data, "utf-8", errors='replace')
         except socket.timeout as e2:  
             if isinstance(e2.reason, socket.timeout):
-                print("第二次，"+str(datetime.now())+'TIME OUT')
-                logger.error("第二次，"+str(datetime.now())+'TIME OUT')
+                print("第二次，"+str(str(datetime.now()))+'TIME OUT')
+                logger.error("第二次，"+str(str(datetime.now()))+'TIME OUT')
             else:
                 logger.error(str(e)) 
             return False
@@ -132,7 +142,7 @@ def get_response_str(req):
     著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
     '''
     # finally:
-    # print(datetime.now())
+    # print(str(datetime.now()))
     '''
     try:
 	response = urllib.request.urlopen('http://httpbin.org/get',timeout=0.1)
@@ -286,9 +296,9 @@ def get_thread_basic_info_html(_tid):
         <title class='ceshi'>test</title>
         </head>
         <body>
-        233
-        <p class='sister'>
         666
+        <p class='sister'>
+        233
         </p>
         </body>
         </html>"
@@ -492,7 +502,7 @@ def get_comment_by_floor(tid, pid, page2):
                     go_on = True
                 if node['class'][count] == 'first_no_border':
                     node['class'][count] = ''
-        time.sleep(random.choice(range(2, 5)))
+        time.sleep(random.choice(range(2,5)))
 
     block_tree = make_reply_block()
     block_tree_node = block_tree.find('ul')
@@ -835,11 +845,13 @@ def usejson():
     tiezilists = jsontemp['tiezi']
     for x in tiezilists:
         if x[2] == True:
+            time.sleep(random.choice(range(5, 10)))
             print('链接:'+x[0]+',标题'+x[1])
             start(x[0])
         else:
-            print('链接:'+x[0]+","+str(x[2])+",该贴不更新！")
-        time.sleep(random.choice(range(5, 10)))
+            print('链接:'+x[0]+',标题'+str(x[1])+","+str(x[2])+",该贴不更新！\n")
+    print("完成运行！"+str(datetime.now()))
+    logger.info("完成运行！"+str(datetime.now()));
     '''
     https://www.cnblogs.com/lpdeboke/p/11414254.html
     python中json的基本使用
@@ -884,15 +896,18 @@ def starttimer():
     #Python 日期和时间 https://www.runoob.com/python/python-date-time.html
     '''
 
+
 if __name__ == '__main__':
     # 不能设为None,会报错,有些地方需要登陆,所以cookie自己想办法弄吧(并不知道是那个cookie，也不知道怎么写，把自己的cookie弄上去也许号可能会没了)
     cookie = ""
     try:  # 不用bat启动会报错所以，设计成这样，报错后默认使用单次运行
         if sys.argv[1] == "1":
-            print("开始周期运行！")
+            print("开始周期运行！"+str(datetime.now()))
+            logger.info("开始周期运行！"+str(datetime.now()))
             starttimer()  # 周期运行
         else:
-            usejson()  # 单次运行
+            print("233")
+            #usejson()  # 单次运行
     except Exception as err:
         usejson()  # 单次运行
 '''
