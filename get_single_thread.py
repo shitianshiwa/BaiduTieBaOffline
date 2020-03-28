@@ -17,6 +17,7 @@ from urllib import request as r
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+jishu=0
 timeout = 31
 socket.setdefaulttimeout(timeout)# 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
 timer = None
@@ -92,17 +93,17 @@ def get_response_str(req):
     except socket.error as e:
         print('socket.error:', str(e))
         logger.error('socket.error:'+str(e))
-        #time.sleep(random.choice(range(20, 60)))
+        time.sleep(random.choice(range(20, 60)))
         #return False
     except http.client.BadStatusLine as e:
         print('http.client.BadStatusLine:', str(e))
         logger.error('http.client.BadStatusLine:'+str(e))
-        #time.sleep(random.choice(range(30, 80)))
+        time.sleep(random.choice(range(30, 80)))
         #return False
     except http.client.IncompleteRead as e:
         print('http.client.IncompleteRead:', str(e))
         logger.error('http.client.IncompleteRead:'+str(e))
-        #time.sleep(random.choice(range(5, 15)))
+        time.sleep(random.choice(range(5, 15)))
         #return False
     try:
         with r.urlopen(req,timeout=30) as f:
@@ -810,18 +811,24 @@ def get_single_thread(tid, fid, title_check, page):
 
 
 def start(url):
+    global jishu
     # https://tieba.baidu.com/p/XXXXXXXX?pn=XX
     tid = str(url).split("/p/")[1].split("?pn=")[0].split("?fid=")[0]
     tid2 = re.search(r'^[0-9]*$', tid).group(0)  # 正则表达式判断是不是全是数字
     # print(tid)
     # print(tid2)
+    if jishu>3:
+        logger.error("连续请求失败超过3次")
+        exit()
     if(tid2 != None):
         if get_single_thread(tid2, '', '', '1') == True:
+            jishu=0
             return True
         else:
+            jishu=jishu+1
             return False
     else:
-        print('贴子链接无效！'+tid)
+        logger.error('贴子链接无效！'+tid)
         return False
     # Python3 正则表达式 | 菜鸟教程
     # https://www.runoob.com/python3/python3-reg-expressions.html
