@@ -852,7 +852,7 @@ def usejson():
     tiezilists = jsontemp['tiezi']
     for x in tiezilists:
         if x[2] == True:
-            time.sleep(random.choice(range(5, 10)))
+            time.sleep(random.choice(range(10, 20)))
             print('链接:'+x[0]+',标题'+x[1])
             start(x[0])
         else:
