@@ -813,7 +813,7 @@ def get_single_thread(tid, fid, title_check, page):
 def start(url):
     global jishu
     # https://tieba.baidu.com/p/XXXXXXXX?pn=XX
-    tid = str(url).split("/p/")[1].split("?pn=")[0].split("?fid=")[0]
+    tid = str(url).split("/p/")[1].split("?pn=")[0].split("?fid=")[0].split("#")[0]
     tid2 = re.search(r'^[0-9]*$', tid).group(0)  # 正则表达式判断是不是全是数字
     # print(tid)
     # print(tid2)
