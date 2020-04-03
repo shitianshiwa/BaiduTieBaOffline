@@ -913,8 +913,9 @@ if __name__ == '__main__':
             logger.info("开始周期运行！"+str(datetime.now()))
             starttimer()  # 周期运行
         else:
-            print("233")
-            #usejson()  # 单次运行
+            print("开始单次运行！"+str(datetime.now()))
+            #print("233")
+            usejson()  # 单次运行
     except Exception as err:
         usejson()  # 单次运行
 '''
