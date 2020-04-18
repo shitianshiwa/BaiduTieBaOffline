@@ -12,11 +12,14 @@ import socket
 import urllib.error
 import http.client
 import re
+import errno
 
+from socket import error as SocketError
 from urllib import request as r
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+weiwancheng=False
 jishu=0
 timeout = 31
 socket.setdefaulttimeout(timeout)# 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
@@ -80,6 +83,21 @@ def req_maker(path):
     else:
         return None
 
+def req_maker2(path,tid):
+    if path:
+        req = r.Request(path)
+        req.add_header(
+            "User-Agent", "Mozilla/5.0 (X11; U; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.124 Safari/537.36")
+        req.add_header(
+            "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
+        req.add_header("Accept-Encoding", "gzip, deflate, br")
+        req.add_header("Accept-Language", "zh-CN,zh;q=0.8,en;q=0.6")
+        req.add_header("Host", "tieba.baidu.com")
+        req.add_header("Referer", "https://tieba.baidu.com/p/"+str(tid))
+        req.add_header("Cookie", cookie)
+        return req
+    else:
+        return None
 
 def get_response_str(req):
     try:
@@ -90,18 +108,25 @@ def get_response_str(req):
         print("第一次，"+str(str(datetime.now()))+str(e))
         logger.error("第一次，"+'socket.timeout:'+str(e))
         time.sleep(random.choice(range(8, 15)))
+    except SocketError as e:
+        print('SocketError:'+str(e))
+        logger.error('SocketError:'+str(e))
+        time.sleep(random.choice(range(60, 80)))
+        #if e.errno != errno.ECONNRESET:
+        #    raise # Not error we are looking for
+        #pass # Handle error here.
     except socket.error as e:
-        print('socket.error:', str(e))
+        print('socket.error:'+str(e))
         logger.error('socket.error:'+str(e))
         time.sleep(random.choice(range(20, 60)))
         #return False
     except http.client.BadStatusLine as e:
-        print('http.client.BadStatusLine:', str(e))
+        print('http.client.BadStatusLine:'+str(e))
         logger.error('http.client.BadStatusLine:'+str(e))
         time.sleep(random.choice(range(30, 80)))
         #return False
     except http.client.IncompleteRead as e:
-        print('http.client.IncompleteRead:', str(e))
+        print('http.client.IncompleteRead:'+str(e))
         logger.error('http.client.IncompleteRead:'+str(e))
         time.sleep(random.choice(range(5, 15)))
         #return False
@@ -109,7 +134,7 @@ def get_response_str(req):
         with r.urlopen(req,timeout=30) as f:
             decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
-    except socket.timeout as e:
+    except SocketError as e:
         print("第二次，"+str(str(datetime.now()))+str(e))
         logger.error("第二次，"+str(str(datetime.now()))+str(e))
     return False
@@ -416,8 +441,8 @@ def get_thread_basic_info(t_tid, t_fid):  # 制造base_info.json文件
 # 实际内容和评论列表,这个page是实际的贴子页数
 def get_thread_by_page(tid, base_info, page):
     html_str = get_response_str(req_maker(
-        'http://tieba.baidu.com/p/' + base_info['tid'] + "?ajax=1&pn=" + str(page)))  # 楼层
-    print('http://tieba.baidu.com/p/' +
+        'https://tieba.baidu.com/p/' + base_info['tid'] + "?ajax=1&pn=" + str(page)))  # 楼层
+    print('https://tieba.baidu.com/p/' +
           base_info['tid'] + "?ajax=1&pn=" + str(page))
     # html_str=False
     if html_str == False:
@@ -437,9 +462,9 @@ def get_thread_by_page(tid, base_info, page):
 
     # 评论列表,这个是json格式,目标是知道哪个楼有回复,同时拿到comment_num也就是总回复数
     # http://tieba.baidu.com/p/totalComment?tid=4736198966&fid=738100&pn=2&see_lz=0
-    json_str = get_response_str(req_maker('http://tieba.baidu.com/p/totalComment?tid='
+    json_str = get_response_str(req_maker('https://tieba.baidu.com/p/totalComment?tid='
                                           + base_info['tid'] + '&fid=' + base_info['fid'] + '&pn=' + str(page)))
-    print('http://tieba.baidu.com/p/totalComment?tid='
+    print('https://tieba.baidu.com/p/totalComment?tid='
           + base_info['tid'] + '&fid=' + base_info['fid'] + '&pn=' + str(page))  # 总楼中楼
     if json_str == False:
         fp = open("./"+tid+"/error.txt", 'w')  # 直接打开一个文件，如果文件不存在则创建文件
@@ -484,8 +509,8 @@ def get_comment_by_floor(tid, pid, page2):
     while go_on:
         go_on = False
         html_str = get_response_str(
-            req_maker('http://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page)))  # 有&pn=是取不到内容的
-        print('http://tieba.baidu.com/p/comment?tid=' +
+            req_maker2('https://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page),tid))  # 有&pn=是取不到内容的
+        print('https://tieba.baidu.com/p/comment?tid=' +
               tid + "&pid=" + pid + '&pn=' + str(page))  # 楼中楼
         if html_str == False:
             fp = open("./"+tid+"/error.txt", 'w')  # 直接打开一个文件，如果文件不存在则创建文件
@@ -503,7 +528,7 @@ def get_comment_by_floor(tid, pid, page2):
                     go_on = True
                 if node['class'][count] == 'first_no_border':
                     node['class'][count] = ''
-        time.sleep(random.choice(range(2,5)))
+        time.sleep(random.choice(range(1,3)))
 
     block_tree = make_reply_block()
     block_tree_node = block_tree.find('ul')
@@ -838,9 +863,12 @@ def start(url):
 
 def usejson():
     # 读取JSON配置文件
+    global weiwancheng
     filename = "./tiezi.json"
     jsontemp = None
     f_obj = None
+    if weiwancheng==True:
+        return
     try:
         f_obj = open(filename, encoding="utf-8")
         jsontemp = json.load(f_obj)
@@ -850,6 +878,7 @@ def usejson():
         f_obj.close()
         exit()
     tiezilists = jsontemp['tiezi']
+    weiwancheng=True
     for x in tiezilists:
         if x[2] == True:
             time.sleep(random.choice(range(10, 20)))
@@ -857,6 +886,7 @@ def usejson():
             start(x[0])
         else:
             print('链接:'+x[0]+',标题'+str(x[1])+","+str(x[2])+",该贴不更新！\n")
+    weiwancheng=False
     print("完成运行！"+str(datetime.now()))
     logger.info("完成运行！"+str(datetime.now()));
     '''
@@ -918,10 +948,51 @@ if __name__ == '__main__':
             usejson()  # 单次运行
     except Exception as err:
         usejson()  # 单次运行
+    #pass
 '''
 http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
 get_single_thread('6351272485','898666','','1')
 楼层https://tieba.baidu.com/mo/q-----1-1-0----/flr?pid=XXXXX&kz=XXXXXXX&pn=0
 楼中楼https://tieba.baidu.com/p/comment?tid=xxxxxx&pid=xxxxxxxx&pn=0
 这是多行注释，用三个单引号
+try:
+    response= urllib2.urlopen(url)
+    data    = response.read().decode('utf-8','ignore')
+except urllib2.HTTPError,e:
+    print e.code
+    return ""
+return data
+验证数字的正则表达式集
+验证数字：^[0-9]*$
+验证n位的数字：^\d{n}$
+验证至少n位数字：^\d{n,}$
+验证m-n位的数字：^\d{m,n}$
+验证零和非零开头的数字：^(0|[1-9][0-9]*)$
+验证有两位小数的正实数：^[0-9]+(.[0-9]{2})?$
+验证有1-3位小数的正实数：^[0-9]+(.[0-9]{1,3})?$
+验证非零的正整数：^\+?[1-9][0-9]*$
+验证非零的负整数：^\-[1-9][0-9]*$
+验证非负整数（正整数 + 0） ^\d+$
+验证非正整数（负整数 + 0） ^((-\d+)|(0+))$
+验证长度为3的字符：^.{3}$
+验证由26个英文字母组成的字符串：^[A-Za-z]+$
+验证由26个大写英文字母组成的字符串：^[A-Z]+$
+验证由26个小写英文字母组成的字符串：^[a-z]+$
+验证由数字和26个英文字母组成的字符串：^[A-Za-z0-9]+$
+验证由数字、26个英文字母或者下划线组成的字符串：^\w+$
+验证用户密码:^[a-zA-Z]\w{5,17}$ 正确格式为：以字母开头，长度在6-18之间，只能包含字符、数字和下划线。
+验证是否含有 ^%&',;=?$\" 等字符：[^%&',;=?$\x22]+
+验证汉字：^[\u4e00-\u9fa5],{0,}$
+验证Email地址：^\w+[-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
+验证InternetURL：^http://([\w-]+\.)+[\w-]+(/[\w-./?%&=]*)?$ ；^[a-zA-z]+://(w+(-w+)*)(.(w+(-w+)*))*(?S*)?$
+验证电话号码：^(\(\d{3,4}\)|\d{3,4}-)?\d{7,8}$：--正确格式为：XXXX-XXXXXXX，XXXX-XXXXXXXX，XXX-XXXXXXX，XXX-XXXXXXXX，XXXXXXX，XXXXXXXX。
+验证身份证号（15位或18位数字）：^\d{15}|\d{}18$
+验证一年的12个月：^(0?[1-9]|1[0-2])$ 正确格式为：“01”-“09”和“1”“12”
+验证一个月的31天：^((0?[1-9])|((1|2)[0-9])|30|31)$ 正确格式为：01、09和1、31。
+整数：^-?\d+$
+非负浮点数（正浮点数 + 0）：^\d+(\.\d+)?$
+正浮点数 ^(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*))$
+非正浮点数（负浮点数 + 0） ^((-\d+(\.\d+)?)|(0+(\.0+)?))$
+负浮点数 ^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$
+浮点数 ^(-?\d+)(\.\d+)?$
 '''
