@@ -135,8 +135,8 @@ def get_response_str(req):
             decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
     except SocketError as e:
-        print("第二次，"+str(str(datetime.now()))+str(e))
-        logger.error("第二次，"+str(str(datetime.now()))+str(e))
+        print("第二次，"+str(datetime.now())+str(e))
+        logger.error("第二次，"+str(datetime.now())+str(e))
     return False
     '''
     except urllib.error.URLError as e:
