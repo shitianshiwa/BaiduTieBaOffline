@@ -1,3 +1,5 @@
+#coding : UTF-8
+#v0.03
 import zlib
 import time
 import sys
@@ -102,6 +104,7 @@ def req_maker2(path,tid):
 def get_response_str(req):
     try:
         with r.urlopen(req, timeout=30) as f:
+            time.sleep(1)
             decompressed_data = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
     except socket.timeout as e:
@@ -132,11 +135,12 @@ def get_response_str(req):
         #return False
     try:
         with r.urlopen(req,timeout=30) as f:
+            time.sleep(1)
             decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
     except SocketError as e:
-        print("第二次，"+str(datetime.now())+str(e))
-        logger.error("第二次，"+str(datetime.now())+str(e))
+        print("第二次，"+str(str(datetime.now()))+str(e))
+        logger.error("第二次，"+str(str(datetime.now()))+str(e))
     return False
     '''
     except urllib.error.URLError as e:
@@ -201,7 +205,7 @@ def prepare_folder(tid):
     if get_thread_basic_info_html(tid) == False:
         logger.error("无法获取到贴子信息，可能已被删除!"+tid)
         print("无法获取到贴子信息，可能已被删除!"+tid)
-        return False
+        return 0
     folder2 = os.path.exists("./"+tid+"/base_info.json")
     if folder2 == True:
         if os.path.exists("./"+tid+"/jsonbackup/base_info.json") == True:
@@ -543,7 +547,7 @@ def get_single_thread(tid, fid, title_check, page):
         logger.error(
             '!!!--error--!!! lacking basic info, can not continue!'+tid)
         print('!!!--error--!!! lacking basic info, can not continue!'+tid)
-        return
+        return False
 
     thread_tid = tid
     thread_fid = fid
@@ -552,7 +556,7 @@ def get_single_thread(tid, fid, title_check, page):
     # 1.准备好目录
     print('1.prepare thread folder')
     if prepare_folder(thread_tid) == False:
-        return
+        return 0
 
     # 2.收集帖子基本信息
     print('2.get thread basic info')
@@ -846,7 +850,7 @@ def start(url):
         logger.error("连续请求失败超过3次")
         exit()
     if(tid2 != None):
-        if get_single_thread(tid2, '', '', '1') == True:
+        if get_single_thread(tid2, '', '', '1') == True or get_single_thread(tid2, '', '', '1') == 0:#0为贴子被删除
             jishu=0
             return True
         else:
