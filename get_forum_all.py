@@ -162,7 +162,7 @@ def usejson():
             print('链接:'+x[0]+',标题'+x[1])
             start(x[0])
         else:
-            print('链接:'+x[0]+","+str(x[1])+",该贴不更新！")
+            print('链接:'+x[0]+","+str(x[1])+",该贴吧不更新！")
         time.sleep(random.choice(range(5, 10)))
     '''
     https://www.cnblogs.com/lpdeboke/p/11414254.html
