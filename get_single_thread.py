@@ -542,7 +542,7 @@ def get_comment_by_floor(tid, pid, page2):
 
 
 # 获取单个帖子,按页保存,能够哪个页面坏了删掉那一页重新跑就行
-def get_single_thread(tid, fid, title_check, page):
+def get_single_thread(tid, fid, title_check, page,tieba):
     if tid is None or fid is None:
         logger.error(
             '!!!--error--!!! lacking basic info, can not continue!'+tid)
@@ -836,7 +836,10 @@ def get_single_thread(tid, fid, title_check, page):
     fp = open("./"+tid+"/frinsh.txt", 'w')  # 直接打开一个文件，如果文件不存在则创建文件
     fp.write(str(info['total_page']))
     fp.close()
-    return True
+    if tieba==False:
+        return True
+    else:
+        return False
 
 
 def start(url):
@@ -850,7 +853,7 @@ def start(url):
         logger.error("连续请求失败超过3次")
         exit()
     if(tid2 != None):
-        if get_single_thread(tid2, '', '', '1') == True or get_single_thread(tid2, '', '', '1') == 0:#0为贴子被删除
+        if get_single_thread(tid2, '', '', '1',False) == True or get_single_thread(tid2, '', '', '1',False) == 0:#0为贴子被删除
             jishu=0
             return True
         else:
