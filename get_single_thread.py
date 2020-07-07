@@ -1,5 +1,5 @@
 #coding : UTF-8
-#v0.03
+#v0.04
 import zlib
 import time
 import sys
@@ -628,7 +628,14 @@ def get_single_thread(tid, fid, title_check, page,tieba):
                 print("获取实际内容和评论列表失败!"+tid)
                 return False
             # 列表的实际内容
-            post_lists = content['content'].find_all('div', class_='l_post')
+            post_lists = None
+            try:
+                post_lists = content['content'].find_all(
+                    'div', class_='l_post')
+            except Exception as e:
+                logger.error("post_lists:"+e)
+                print("post_lists:"+e)
+                return False
             for post in post_lists:
                 # 取出post数据
                 post_data_node = post.find('div', class_="j_d_post_content")
