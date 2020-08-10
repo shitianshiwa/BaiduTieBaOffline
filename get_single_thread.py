@@ -1,5 +1,6 @@
+# v0.05
 #coding : UTF-8
-#v0.04
+# 记录同时出现多个贴子被删会导致爬虫停止
 import zlib
 import time
 import sys
@@ -21,10 +22,10 @@ from urllib import request as r
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-weiwancheng=False
-jishu=0
+weiwancheng = False
+jishu = 0
 timeout = 31
-socket.setdefaulttimeout(timeout)# 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
+socket.setdefaulttimeout(timeout)  # 这里对整个socket层设置超时时间。后续文件中如果再使用到socket，不必再设置
 timer = None
 '''
 https://www.jianshu.com/p/d8585f0d9eb8
@@ -85,7 +86,8 @@ def req_maker(path):
     else:
         return None
 
-def req_maker2(path,tid):
+
+def req_maker2(path, tid):
     if path:
         req = r.Request(path)
         req.add_header(
@@ -101,6 +103,7 @@ def req_maker2(path,tid):
     else:
         return None
 
+
 def get_response_str(req):
     try:
         with r.urlopen(req, timeout=30) as f:
@@ -115,28 +118,28 @@ def get_response_str(req):
         print('SocketError:'+str(e))
         logger.error('SocketError:'+str(e))
         time.sleep(random.choice(range(60, 80)))
-        #if e.errno != errno.ECONNRESET:
+        # if e.errno != errno.ECONNRESET:
         #    raise # Not error we are looking for
-        #pass # Handle error here.
+        # pass # Handle error here.
     except socket.error as e:
         print('socket.error:'+str(e))
         logger.error('socket.error:'+str(e))
         time.sleep(random.choice(range(20, 60)))
-        #return False
+        # return False
     except http.client.BadStatusLine as e:
         print('http.client.BadStatusLine:'+str(e))
         logger.error('http.client.BadStatusLine:'+str(e))
         time.sleep(random.choice(range(30, 80)))
-        #return False
+        # return False
     except http.client.IncompleteRead as e:
         print('http.client.IncompleteRead:'+str(e))
         logger.error('http.client.IncompleteRead:'+str(e))
         time.sleep(random.choice(range(5, 15)))
-        #return False
+        # return False
     try:
-        with r.urlopen(req,timeout=30) as f:
+        with r.urlopen(req, timeout=30) as f:
             time.sleep(1)
-            decompressed_data =zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
+            decompressed_data = zlib.decompress(f.read(), 16 + zlib.MAX_WBITS)
         return str(decompressed_data, "utf-8", errors='replace')
     except SocketError as e:
         print("第二次，"+str(str(datetime.now()))+str(e))
@@ -213,6 +216,7 @@ def prepare_folder(tid):
         shutil.move("./"+tid+"/base_info.json", "./"+tid +
                     "/jsonbackup")  # 把base_info.json移动到备份文件夹中
     folder3 = os.path.exists('./'+tid+'/res')
+
     if folder3 == False:
         shutil.copytree('./model/res', './'+tid+'/res')
     folder4 = os.path.exists('./'+tid+'/error.txt')
@@ -470,22 +474,28 @@ def get_thread_by_page(tid, base_info, page):
                                           + base_info['tid'] + '&fid=' + base_info['fid'] + '&pn=' + str(page)))
     print('https://tieba.baidu.com/p/totalComment?tid='
           + base_info['tid'] + '&fid=' + base_info['fid'] + '&pn=' + str(page))  # 总楼中楼
+    print('json_str:'+json_str)
     if json_str == False:
         fp = open("./"+tid+"/error.txt", 'w')  # 直接打开一个文件，如果文件不存在则创建文件
         fp.write(str(page))
         fp.close()
-        return False, False
+        return content, False
     else:
-        json_data = json.loads(json_str)
-    # print(json_data)
-    comment_data = {}
-    for key in json_data['data']['comment_list']:
-        comment_data[key] = json_data['data']['comment_list'][key]['comment_num']
+        try:
+            json_data = json.loads(json_str)
+            comment_data = {}
+            for key in json_data['data']['comment_list']:
+                comment_data[key] = json_data['data']['comment_list'][key]['comment_num']
+            return content, comment_data
 
-    return content, comment_data
-
+        except Exception as e:
+            logger.error("comment_list:"+e)
+            print("comment_list:"+e)
+            return content, False
 
 # 回复,这个比较麻烦
+
+
 def make_reply_block():
     # 这个块区添加到对应的div class="j_lzl_container core_reply_wrapper"内部去
     # 评论放到<ul class="j_lzl_m_w" style="display:">里面
@@ -513,7 +523,7 @@ def get_comment_by_floor(tid, pid, page2):
     while go_on:
         go_on = False
         html_str = get_response_str(
-            req_maker2('https://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page),tid))  # 有&pn=是取不到内容的
+            req_maker2('https://tieba.baidu.com/p/comment?tid=' + tid + "&pid=" + pid + '&pn=' + str(page), tid))  # 有&pn=是取不到内容的
         print('https://tieba.baidu.com/p/comment?tid=' +
               tid + "&pid=" + pid + '&pn=' + str(page))  # 楼中楼
         if html_str == False:
@@ -532,7 +542,7 @@ def get_comment_by_floor(tid, pid, page2):
                     go_on = True
                 if node['class'][count] == 'first_no_border':
                     node['class'][count] = ''
-        time.sleep(random.choice(range(1,3)))
+        time.sleep(random.choice(range(1, 3)))
 
     block_tree = make_reply_block()
     block_tree_node = block_tree.find('ul')
@@ -542,7 +552,7 @@ def get_comment_by_floor(tid, pid, page2):
 
 
 # 获取单个帖子,按页保存,能够哪个页面坏了删掉那一页重新跑就行
-def get_single_thread(tid, fid, title_check, page,tieba):
+def get_single_thread(tid, fid, title_check, page, tieba):
     if tid is None or fid is None:
         logger.error(
             '!!!--error--!!! lacking basic info, can not continue!'+tid)
@@ -623,9 +633,9 @@ def get_single_thread(tid, fid, title_check, page,tieba):
             print('getting page detail ' + str(page))
             # 获取实际内容和评论列表
             content, comment_data = get_thread_by_page(tid, info, page)
-            if content == False and comment_data == False:
-                logger.error("获取实际内容和评论列表失败!"+tid)
-                print("获取实际内容和评论列表失败!"+tid)
+            if content == False:
+                logger.error("获取楼层失败!"+tid)
+                print("获取获取楼层失败!"+tid)
                 return False
             # 列表的实际内容
             post_lists = None
@@ -686,15 +696,19 @@ def get_single_thread(tid, fid, title_check, page,tieba):
                     if share_btn_wrapper:
                         share_btn_wrapper.clear()
 
-                    if comment_data.get(post_data_id):
-                        # 有评论
-                        block_tree = get_comment_by_floor(
-                            thread_tid, post_data_id, page)
-                        if block_tree == False:
-                            logger.error("获取评论失败!"+tid)
-                            print("获取评论失败!"+tid)
-                            return False
-                        post_data_node_comment.append(block_tree)
+                    if comment_data != False:
+                        if comment_data.get(post_data_id):
+                            # 有评论
+                            block_tree = get_comment_by_floor(
+                                thread_tid, post_data_id, page)
+                            if block_tree == False:
+                                logger.error("获取评论失败!"+tid)
+                                print("获取评论失败!"+tid)
+                                return False
+                            post_data_node_comment.append(block_tree)
+                    else:
+                        logger.error("获取评论列表失败!"+tid)
+                        print("获取评论列表失败!"+tid)
 
                     p_postlist.append(post)
                     print('adding a floor ' + str(page))
@@ -843,7 +857,7 @@ def get_single_thread(tid, fid, title_check, page,tieba):
     fp = open("./"+tid+"/frinsh.txt", 'w')  # 直接打开一个文件，如果文件不存在则创建文件
     fp.write(str(info['total_page']))
     fp.close()
-    if tieba==False:
+    if tieba == False:
         return True
     else:
         return False
@@ -852,19 +866,20 @@ def get_single_thread(tid, fid, title_check, page,tieba):
 def start(url):
     global jishu
     # https://tieba.baidu.com/p/XXXXXXXX?pn=XX
-    tid = str(url).split("/p/")[1].split("?pn=")[0].split("?fid=")[0].split("#")[0]
+    tid = str(url).split(
+        "/p/")[1].split("?pn=")[0].split("?fid=")[0].split("#")[0]
     tid2 = re.search(r'^[0-9]*$', tid).group(0)  # 正则表达式判断是不是全是数字
     # print(tid)
     # print(tid2)
-    if jishu>3:
+    if jishu > 3:
         logger.error("连续请求失败超过3次")
         exit()
     if(tid2 != None):
         if get_single_thread(tid2, '', '', '1',False) == True or get_single_thread(tid2, '', '', '1',False) == 0:#0为贴子被删除
-            jishu=0
+            jishu = 0
             return True
         else:
-            jishu=jishu+1
+            jishu = jishu+1
             return False
     else:
         logger.error('贴子链接无效！'+tid)
@@ -881,7 +896,7 @@ def usejson():
     filename = "./tiezi.json"
     jsontemp = None
     f_obj = None
-    if weiwancheng==True:
+    if weiwancheng == True:
         return
     try:
         f_obj = open(filename, encoding="utf-8")
@@ -892,17 +907,17 @@ def usejson():
         f_obj.close()
         exit()
     tiezilists = jsontemp['tiezi']
-    weiwancheng=True
+    weiwancheng = True
     for x in tiezilists:
         if x[2] == True:
             time.sleep(random.choice(range(10, 20)))
             print('链接:'+x[0]+',标题'+x[1])
             start(x[0])
         else:
-            print('链接:'+x[0]+',标题'+str(x[1])+","+str(x[2])+",该贴不更新！\n")
-    weiwancheng=False
+            print('链接:'+x[0]+',标题'+str(x[1])+','+str(x[2])+',该贴不更新!\n')
+    weiwancheng = False
     print("完成运行！"+str(datetime.now()))
-    logger.info("完成运行！"+str(datetime.now()));
+    logger.info("完成运行！"+str(datetime.now()))
     '''
     https://www.cnblogs.com/lpdeboke/p/11414254.html
     python中json的基本使用
@@ -919,7 +934,9 @@ def starttimer():
     # print("2233")
     usejson()
     timeoutx = 1800+random.choice(range(1, 10))
-    print("延迟："+str(timeoutx)+"s,下次运行时间："+str(time.strftime("%Y-%m-%d %H:%M:%S %a",time.localtime(time.time()+timeoutx))))#接收时间戳（1970纪元后经过的浮点秒数）并返回当地时间下的时间元组t（t.tm_isdst可取0或1，取决于当地当时是不是夏令时）。
+    # 接收时间戳（1970纪元后经过的浮点秒数）并返回当地时间下的时间元组t（t.tm_isdst可取0或1，取决于当地当时是不是夏令时）。
+    print("延迟："+str(timeoutx)+"s,下次运行时间：" +
+          str(time.strftime("%Y-%m-%d %H:%M:%S %a", time.localtime(time.time()+timeoutx))))
     timer = threading.Timer(timeoutx, starttimer)
     timer.start()
     '''
@@ -958,11 +975,12 @@ if __name__ == '__main__':
             starttimer()  # 周期运行
         else:
             print("开始单次运行！"+str(datetime.now()))
-            #print("233")
+            # print("233")
             usejson()  # 单次运行
     except Exception as err:
         usejson()  # 单次运行
-    #pass
+    # pass
+
 '''
 http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
 get_single_thread('6351272485','898666','','1')
@@ -976,6 +994,7 @@ except urllib2.HTTPError,e:
     print e.code
     return ""
 return data
+
 验证数字的正则表达式集
 验证数字：^[0-9]*$
 验证n位的数字：^\d{n}$
