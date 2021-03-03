@@ -1,1 +1,3 @@
 *.py linguist-language=python
+*.bat linguist-language=bat
+*.zip linguist-language=zip
