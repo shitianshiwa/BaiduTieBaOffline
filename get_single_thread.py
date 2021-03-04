@@ -1,4 +1,4 @@
-# v0.05
+# v0.06
 #coding : UTF-8
 # 记录同时出现多个贴子被删会导致爬虫停止
 import zlib
@@ -964,22 +964,28 @@ def starttimer():
     #Python 日期和时间 https://www.runoob.com/python/python-date-time.html
     '''
 
-
+   
 if __name__ == '__main__':
-    # 不能设为None,会报错,有些地方需要登陆,所以cookie自己想办法弄吧(并不知道是那个cookie，也不知道怎么写，把自己的cookie弄上去也许号可能会没了)
-    cookie = ""
-    try:  # 不用bat启动会报错所以，设计成这样，报错后默认使用单次运行
-        if sys.argv[1] == "1":
-            print("开始周期运行！"+str(datetime.now()))
-            logger.info("开始周期运行！"+str(datetime.now()))
-            starttimer()  # 周期运行
-        else:
-            print("开始单次运行！"+str(datetime.now()))
-            # print("233")
+    cookie = ""#没试过!登录看贴鉴权。浏览器开发者工具-Application里找BDUSS和STOKEN，不知道怎么填。
+    temp = input("请输入贴子链接:")
+    if temp!="":
+        start(temp)
+        print('爬取贴子完成')
+    else:
+        print('未发现贴子链接，自动使用配置文件')
+        # 不能设为None,会报错,有些地方需要登陆,所以cookie自己想办法弄吧(并不知道是那个cookie，也不知道怎么写，把自己的cookie弄上去也许号可能会没了)
+        try:  # 不用bat启动会报错所以，设计成这样，报错后默认使用单次运行
+            if sys.argv[1] == "1":
+                print("开始周期运行！"+str(datetime.now()))
+                logger.info("开始周期运行！"+str(datetime.now()))
+                starttimer()  # 周期运行
+            else:
+                print("开始单次运行！"+str(datetime.now()))
+                # print("233")
+                usejson()  # 单次运行
+        except Exception as err:
             usejson()  # 单次运行
-    except Exception as err:
-        usejson()  # 单次运行
-    # pass
+        # pass
 
 '''
 http://tieba.baidu.com/p/6351272485 【直播】11月15日问题反馈结果（贴吧意见反馈吧） 有bug，例如这个贴子不能获取每个的楼层时间
